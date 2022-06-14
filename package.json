@@ -1,0 +1,21 @@
+{
+  "name": "parfait",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat compile && npx hardhat run scripts/deploy.js --network rinkeby",
+    "start": "cd app && npm run start",
+    "build": "cd app && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "dotenv": "^16.0.1",
+    "ethers": "^5.6.8",
+    "hardhat": "^2.9.9"
+  }
+}
