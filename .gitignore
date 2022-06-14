@@ -4,7 +4,6 @@ coverage
 coverage.json
 typechain
 __config.json
-utils
 build
 
 #Hardhat files
