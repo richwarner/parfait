@@ -10,10 +10,10 @@ async function main() {
 
   // Write the deployment address to a config file 
   const config = { parfaitAddress: parfait.address }
-  fs.writeFileSync("./app/src/__config.json", JSON.stringify(config, null, 2));
+  fs.writeFileSync(".\\app\\src\\__config.json", JSON.stringify(config, null, 2));
 
   // Copy the ABI to a directory accessible to the app
-  fs.copyFileSync("./artifacts/contracts/Parfait.sol/Parfait.json", "./app/src/utils/Parfait.json");
+  fs.copyFileSync(".\\artifacts\\contracts\\Parfait.sol\\Parfait.json", ".\\app\\src\\utils\\Parfait.json");
 
   console.log("Parfait deployed to:", parfait.address);
 }
