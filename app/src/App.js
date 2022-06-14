@@ -62,7 +62,7 @@ function App() {
       </header>
 
       <main className="px-3">
-        <h1>Get Up. <span className="maple">Own Your DeFi.</span> Enjoy Breakfast.</h1>
+        <h1>Get Up. <span className="maple">Own DeFi.</span> Enjoy Breakfast.</h1>
         <p className="lead">Save time and effort without giving up control.</p>
         <p className="lead">
           <a href="#" onClick={connectWallet} className="btn btn-lg btn-secondary fw-bold border-turq bg-turq">Open App</a>
