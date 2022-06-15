@@ -1,22 +1,38 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.4;
 
-import "hardhat/console.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract Parfait {
-    string private greeting;
+contract Parfait is Initializable {
+	address public owner;
+	uint public xAllocation;
+	uint public yAllocation;
+    uint public zAllocation;
+	uint public xBalance;
+	uint public yBalance;
+    uint public zBalance;
 
-    constructor(string memory _greeting) {
-        console.log("Deploying a Greeter with greeting:", _greeting);
-        greeting = _greeting;
-    }
+	function initialize(address _owner, uint _xAllocation, uint _yAllocation, uint _zAllocation) public payable initializer {
+		owner = _owner;
+		xAllocation = _xAllocation;
+		yAllocation = _yAllocation;
+        yAllocation = _zAllocation;
+	}
 
-    function greet() public view returns (string memory) {
-        return greeting;
-    }
-
-    function setGreeting(string memory _greeting) public {
-        console.log("Changing greeting from '%s' to '%s'", greeting, _greeting);
-        greeting = _greeting;
+	function rebalance() public {
+		require(msg.sender == owner, "only owner can call this");
+        //replace below with proper rebalance
+		uint totalAllocation = xAllocation + yAllocation + zAllocation;
+        xBalance += 10 * xAllocation / totalAllocation;
+		yBalance += 10 * yAllocation / totalAllocation;
+        zBalance += 10 * zAllocation / totalAllocation;
+	}
+    function updateAllocations(uint _xAllocation, uint _yAllocation, uint _zAllocation) external {
+        require(msg.sender == owner, "only owner can call this");
+        require(_xAllocation + _yAllocation + _zAllocation == 100, "invalid allocations sum");
+        xAllocation = _xAllocation;
+		yAllocation = _yAllocation;
+        yAllocation = _zAllocation;
+        rebalance();
     }
 }
