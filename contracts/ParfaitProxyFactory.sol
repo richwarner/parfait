@@ -29,6 +29,7 @@ contract ParfaitProxyFactory {
                 _zAllocation
             )
         );
+
         allClones.push(instance);
         emit NewClone(instance);
         return instance;

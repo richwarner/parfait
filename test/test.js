@@ -71,7 +71,4 @@ describe("ParfaitProxyFactory", function () {
     await expect(clone1User2.rebalance()).to.be.reverted;
   });
 
-  it("owner can reset allocations", async function () {
-    //FILL THIS IN
-  });
 });
