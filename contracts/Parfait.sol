@@ -23,116 +23,118 @@ interface CErc20 {
     function balanceOf(address) external view returns (uint); //Lee added
 }
 
+interface CEther {
+    function mint() external payable;
+
+    function redeem(uint redeemTokens) external returns (uint);
+
+    function balanceOf(address) external view returns (uint); //Lee added
+}
+
 contract Parfait is Initializable {
     address public owner;
-    uint public ethAllocation;
-    uint public stEthAllocation;
-    uint public cDaiAllocation;
+    uint public CETHAllocation;
+    uint public CWBTCAllocation;
+    uint public CDAIAllocation;
 
-    // all addresses on Rinkeby
-    IERC20 weth9 = IERC20(0xc778417E063141139Fce010982780140Aa0cD5Ab);
-    IERC20 stEth = IERC20(0xF4242f9d78DB7218Ad72Ee3aE14469DBDE8731eD); //is this the right address??
-    IERC20 dai = IERC20(0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa);
-    CErc20 cDai = CErc20(0x6D7F0754FFeb405d23C51CE938289d4835bE3b14);
-    AggregatorV3Interface internal ethPriceFeed =
-        AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
-    AggregatorV3Interface internal daiPriceFeed =
-        AggregatorV3Interface(0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF);
+    // all addresses on Kovan
+    IERC20 WETH9 = IERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C);
+    IERC20 WBTC = IERC20(0xA0A5aD2296b38Bd3e3Eb59AAEAF1589E8d9a29A9);
+    IERC20 DAI = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
 
-    /* AggregatorV3Interface internal stEthPriceFeed = AggregatorV3Interface();  */
-    // price feed does not exist on Rinkeby
+    CEther CETH = CEther(0x41B5844f4680a8C38fBb695b7F9CFd1F64474a72);
+    CErc20 CWBTC = CErc20(0xa1fAA15655B0e7b6B6470ED3d096390e6aD93Abb);
+    CErc20 CDAI = CErc20(0xF0d0EB522cfa50B716B3b1604C4F0fA6f04376AD);
+
+    AggregatorV3Interface internal ETHPriceFeed =
+        AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
+    AggregatorV3Interface internal WBTCPriceFeed =
+        AggregatorV3Interface(0x6135b13325bfC4B00278B4abC5e20bbce2D6580e);
+    AggregatorV3Interface internal DAIPriceFeed =
+        AggregatorV3Interface(0x777A68032a88E5A84678A77Af2CD65A7b3c0775a);
+
     /* IswapRouter public immutable swapRouter; */
 
     function initialize(
         address _owner,
-        uint _ethAllocation,
-        uint _stEthAllocation,
-        uint _cDaiAllocation
+        uint _CETHAllocation,
+        uint _CWBTCAllocation,
+        uint _CDAIAllocation
     ) public payable initializer {
         owner = _owner;
-        /* updateAllocations(_ethAllocation, _stEthAllocation, _cDaiAllocation); */
+        //updateAllocations(_CETHAllocation, _CWBTCAllocation, _CDAIAllocation);
     }
 
-    /* 	function rebalance() public {
-		require(msg.sender == owner, "only owner can call this");
-        (uint ethBalance, uint stEthBalance, uint cDaiBalance) = getBalances();
-		(uint ethPrice, uint stEthPrice, uint cDaiPrice) = getPrices();
-		
-		uint ethValue = ethBalance * ethPrice;
-		uint stEthValue = stEthBalance * stEthPrice;
-		uint cDaiValue = cDaiBalance * cDaiPrice;
-		uint totalValue = ethValue + stEthValue + cDaiValue;
-		
-		uint ethAdjustment = (totalValue * ethAllocation / 100) - ethValue;
-		uint stEthAdjustment = (totalValue * stEthAllocation / 100) - stEthValue;
-		uint cDaiAdjustment = (totalValue * cDaiAllocation / 100) - cDaiValue;
+    function rebalance() public {
+/*         require(msg.sender == owner, "only owner can call this");
+        (uint ETHBalance, uint WBTCBalance, uint CDAIBalance) = getBalances();
+        (int ETHPrice, int WBTCPrice, int CDAIPrice) = getPrices();
 
-		if(stEthAdjustment < 0) {
-			//sell stEthAdjustment of stEth for weth
+        // CODE BELOW WILL NOT COMPILE - price feed outs on int, so we may need to switch all uints over to int... might be better solution
+        uint ETHValue = ETHBalance * ETHPrice; 
+        uint WBTCValue = WBTCBalance * WBTCPrice;
+        uint CDAIValue = CDAIBalance * CDAIPrice;
+        uint totalValue = ETHValue + WBTCValue + CDAIValue;
 
-		}
-		if(cDaiAdjustment < 0) {
-			//redeem cDaiAdjustment amount of cUsdc for Usdc
-			
-			//then swap usdc for weth
-		}
-		if(stEthAdjustment > 0) {
-			//deposit stEthAdjustment of eth for weth
-			
-			//buy stEth from weth
-		}
-		if(cDaiAdjustment > 0) {
-			//deposit cDaiAdjustment of eth for weth
-			
-			//buy Usdc from weth, 
-			
-			//then deposit Usdc for cUsdc
-		}
-	}
+        uint CETHAdjustment = ((totalValue * CETHAllocation) / 100) - ETHValue;
+        uint CWBTCAdjustment = ((totalValue * CWBTCAllocation) / 100) -
+            WBTCValue;
+        uint CDAIAdjustment = ((totalValue * CDAIAllocation) / 100) - CDAIValue;
 
-    function updateAllocations(uint _ethAllocation, uint _stEthAllocation, uint _cDaiAllocation) public {
+        if (CETHAdjustment < 0) {
+            //redeem CETHAdjustment amount of CETH for ETH
+            //then deposit ETH for WETH
+        }
+        if (CWBTCAdjustment < 0) {
+            //deposit WBTCAdjustment of CWBTC for WBTC
+            //then swap WBTC for WETH
+        }
+        if (CDAIAdjustment < 0) {
+            //redeem CDAIAdjustment amount of CDAI for DAI
+            //then swap DAI for WETH
+        }
+        if (CWBTCAdjustment > 0) {
+            //swap CWBTCAdjustment amount of WETH for WBTC
+            //deposit WBTC for CWBTC
+        }
+        if (CDAIAdjustment > 0) {
+            //swap WETH for DAI
+            //Deposit DAI for CDAI
+        } */
+    }
+
+    function updateAllocations(
+        uint _CETHAllocation,
+        uint _CWBTCAllocation,
+        uint _CDAIAllocation
+    ) external payable {
         require(msg.sender == owner, "only owner can call this");
-        require(_ethAllocation + _stEthAllocation + _cDaiAllocation == 100, "invalid allocations sum");
-        ethAllocation = _ethAllocation;
-		stEthAllocation = _stEthAllocation;
-        stEthAllocation = _cDaiAllocation;
+        require(
+            _CETHAllocation + _CWBTCAllocation + _CDAIAllocation == 100,
+            "invalid allocations sum"
+        );
+        CETHAllocation = _CETHAllocation;
+        CWBTCAllocation = _CWBTCAllocation;
+        CDAIAllocation = _CDAIAllocation;
         rebalance();
     }
 
-	function withdraw() external {
-		require(msg.sender == owner, "only owner can call this");
-	}
-	
-	receive() payable external {
-	} */
-
-    function getBalances()
-        public
-        view
-        returns (
-            uint ethBalance,
-            uint stEthBalance,
-            uint cDaiBalance
-        )
-    {
-        ethBalance = address(this).balance;
-        stEthBalance = stEth.balanceOf(address(this));
-        cDaiBalance = cDai.balanceOf(address(this));
+    function withdraw() external {
+        require(msg.sender == owner, "only owner can call this");
     }
 
-    function getPrices()
-        public
-        view
-        returns (
-            int,
-            int,
-            int
-        )
-    {
-        (, int ethPrice, , , ) = ethPriceFeed.latestRoundData();
-        int stEthPrice = ethPrice; // stEthPrice feed does not exist on Chainlink Rinkeby
-        (, int daiPrice, , , ) = daiPriceFeed.latestRoundData();
+    receive() external payable {}
 
-        return (ethPrice, stEthPrice, daiPrice);
+    function getBalances() public view returns (uint CETHBalance, uint CWBTCBalance, uint CDAIBalance) {
+        CETHBalance = CETH.balanceOf(address(this));
+        CWBTCBalance = WBTC.balanceOf(address(this));
+        CDAIBalance = CDAI.balanceOf(address(this));
+    }
+
+    function getPrices() public view returns (int, int, int) {
+        (, int ETHPrice, , , ) = ETHPriceFeed.latestRoundData();
+        (, int WBTCPrice, , , ) = WBTCPriceFeed.latestRoundData();
+        (, int DAIPrice, , , ) = DAIPriceFeed.latestRoundData();
+        return (ETHPrice, WBTCPrice, DAIPrice);
     }
 }
