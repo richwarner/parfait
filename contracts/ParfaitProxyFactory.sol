@@ -20,7 +20,7 @@ contract ParfaitProxyFactory {
         uint _zAllocation
     ) external payable returns (address instance) {
         instance = Clones.clone(implementationContract);
-        instance.call{value: msg.value}(
+        (bool success, ) = instance.call{value: msg.value}(
             abi.encodeWithSignature(
                 "initialize(address,uint256,uint256,uint256)",
                 msg.sender,
@@ -29,6 +29,7 @@ contract ParfaitProxyFactory {
                 _zAllocation
             )
         );
+        require(success, "Proxy Initialization Failed");
 
         allClones.push(instance);
         emit NewClone(instance);
