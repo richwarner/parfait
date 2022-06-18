@@ -94,6 +94,7 @@
 .btn-primary, .btn-primary:active, .btn-primary:focus, .btn-primary:disabled {
   background-color: #ca7932;
   border-color: #ca7932;
+  font-weight: 600;
 }
 
 .btn-primary:hover {

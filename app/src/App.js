@@ -34,9 +34,9 @@ function App() {
     
     // Try to connect
     if(ethereum) {
-      ethereum.request({ method: 'eth_requestAccounts'});
+      await ethereum.request({ method: 'eth_requestAccounts'});
       const provider = new ethers.providers.Web3Provider(ethereum);
-      const signer = provider.getSigner();
+      const signer = provider.getSigner(0);
       const connectedUserAddress = await signer.getAddress();
       setUserAddress(connectedUserAddress);
 
