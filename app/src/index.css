@@ -12,7 +12,7 @@ code {
 } */
 
 .sticky-header {
-  background-color: #111;
+  background-color: #221436;
 }
 
 .logo {
@@ -20,7 +20,7 @@ code {
 }
 
 .i {  
-  color: #3a7c8a;
+  color: #ca7932;
   position: relative;
 }
 .i:before {
@@ -31,4 +31,12 @@ code {
 
 .bg-gray {
   background-color: #e4ddd8;
+}
+
+.bg-darkpurple {
+  background-color: #221436;
+}
+
+.bg-purple {
+  background-color: #3a1e56;
 }

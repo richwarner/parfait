@@ -8,36 +8,15 @@ import config from './__config';
 import { createClient } from 'urql';
 const GRAPH_API_URL = 'https://api.thegraph.com/subgraphs/name/richwarner/parfait';
 
-// class App extends React.Component {
-//   constructor(props) {
-//     super(props);
-//     this.state = {
-//       connected: false,
-//     }
-//     const { ethereum } = window;
-//     let provider;
-//   }
-
-//   handleConnect() {
-//     if(!this.state.connected) {
-//       if(ethereum) {
-//         ethereum.request({ method: 'eth_requestAccounts'});
-//         provider = new ethers.providers.Web3Provider(ethereum);
-//         // Do something
-//       } else {
-//         console.log("You need to install MetaMask!");
-//       }
-//     }
-//   }
-
-// }
-
 function App() {
 
   // State variables
   const [userAddress, setUserAddress] = React.useState("Connect");
   const [proxyAddress, setProxyAddressState] = React.useState("");
   const [deposit, setDeposit] = React.useState(".0001");
+  const [xBalance, setXBalance] = React.useState("");
+  const [yBalance, setYBalance] = React.useState("");
+  const [zBalance, setZBalance] = React.useState("");  
   const [xCurrentAllocation, setXCurrentAllocation] = React.useState("");
   const [yCurrentAllocation, setYCurrentAllocation] = React.useState("");
   const [zCurrentAllocation, setZCurrentAllocation] = React.useState("");
@@ -87,20 +66,40 @@ function App() {
     setProxyAddressState(addr);
   }
  
+  // Fetch current balances and allocations
   async function populatePortfolio(userProxyAddress) {
     const provider = new ethers.providers.Web3Provider(ethereum);
     const signer = provider.getSigner();
     const proxyContract = new ethers.Contract(userProxyAddress, parfaitJSON.abi, signer);
     try {
+      // Get allocations
       const currentX = await proxyContract.CETHAllocation(); 
       const currentY = await proxyContract.CWBTCAllocation(); 
       const currentZ = await proxyContract.CDAIAllocation();
       setXCurrentAllocation(currentX.toString() + "%"); 
       setYCurrentAllocation(currentY.toString() + "%"); 
       setZCurrentAllocation(currentZ.toString() + "%"); 
-      // console.log("Current X: %s", currentX); 
-      // console.log("Current Y: %s", currentY); 
-      // console.log("Current Z: %s", currentZ); 
+      // console.log("Allocation X: %s", currentX); 
+      // console.log("Allocation Y: %s", currentY); 
+      // console.log("Allocation Z: %s", currentZ); 
+
+      // Get balances
+      // const balances = await proxyContract.getBalances(); 
+      // const balanceX = balances[0]; 
+      // const balanceY = balances[1]; 
+      // const balanceZ = balances[2]; 
+      // setXCurrentAllocation(balanceX.toString()); 
+      // setYCurrentAllocation(balanceY.toString()); 
+      // setZCurrentAllocation(balanceZ.toString()); 
+      // console.log("Balance X: %s", balanceX); 
+      // console.log("Balance Y: %s", balanceY); 
+      // console.log("Balance Z: %s", balanceZ);
+
+      // Reset allocation inputs
+      setXAllocation("");
+      setYAllocation("");
+      setZAllocation("");
+
     } catch (err) {
       console.log("Error fetching user portfolio: %s", err);
     }
@@ -118,6 +117,7 @@ function App() {
     }
   }
 
+  // Check subgraph for existing user proxy contract
   async function getUserProxyAddress(addr) {
     const eventQuery = `{ parfaitNewCloneEvents(where: {_owner: "${addr}"}) { id count _owner _clone } }`;
     let userProxyAddr = "";
@@ -136,14 +136,18 @@ function App() {
 
   async function updatePortfolio() {
     console.log("Updating portfolio");
+    
     // Show loading spinner
     document.querySelector("#btn-submit-portfolio").classList.add("d-none");
     document.querySelector("#btn-submit-portfolio-loading").classList.remove("d-none");
-    // try {
+
+    try {
       const provider = new ethers.providers.Web3Provider(ethereum);
       const signer = provider.getSigner(); 
-      if(!proxyAddress) {
-        // Create proxy contract        
+      
+      if(!proxyAddress) {  
+        
+        // Create proxy contract                 
         console.log("Creating new proxy contract for user %s with %s eth", await signer.getAddress(), deposit);
         const factoryContract = new ethers.Contract(config.parfaitProxyFactoryAddress, parfaitProxyFactoryJSON.abi, signer);
         const tx = await factoryContract.createNewProxy(xAllocation, yAllocation, zAllocation, {
@@ -155,37 +159,29 @@ function App() {
         const addr = receipt.events[1].args[1];     
         setProxyAddress(addr);  
         document.querySelector('#proxyAddressContainer').classList.add('animate__animated', 'animate__fadeIn', 'animate__delay-1s');
-      } else {
-        // Update existing proxy contract
+
+      } else { 
+        
+        // Update existing proxy contract           
         console.log("Updating existing proxy contract at %s with signer %s", proxyAddress, await signer.getAddress());  
         // Use the Parfait ABI to get a connection to the proxy contract
         const proxyContract = new ethers.Contract(proxyAddress, parfaitJSON.abi, signer);
         const tx = await proxyContract.updateAllocations(xAllocation, yAllocation, zAllocation, {
           value: ethers.utils.parseEther(deposit),
         });
-        const receipt = await tx.wait();    
+        const receipt = await tx.wait(); 
+        // Update UI
+        populatePortfolio(proxyAddress);
+
       }
-    // } catch (err) {
-    //   console.log(err);
-    // }
+    } catch (err) {
+      console.log(err);
+    }
+
     // Remove loading spinner
     document.querySelector("#btn-submit-portfolio").classList.remove("d-none");
     document.querySelector("#btn-submit-portfolio-loading").classList.add("d-none");
   }
-
-  // async function getCurrentGreeting() {
-  //   let signer = await provider.getSigner();
-  //   let contractInstance = new ethers.Contract(config.parfaitAddress, parfaitJSON.abi, signer);
-  //   let currentGreeting = await contractInstance.greet();
-  //   setGreeting(currentGreeting);
-  //   console.log("The greeting is " + currentGreeting);
-  // }
-
-  // async function setNewGreeting() {
-  //   let signer = await provider.getSigner();
-  //   let contractInstance = new ethers.Contract(config.parfaitAddress, parfaitJSON.abi, signer);
-  //   await contractInstance.setGreeting("Hey Class 1!");
-  // }
 
   return (
     <div className="App">
@@ -273,13 +269,6 @@ function App() {
           </div>         
         </div>        
       </div>
-      
-      {/* <div className="user-details">{address}</div>
-      <div>{balance}</div>
-      <button onClick={getCurrentGreeting}>Get Current Greeting!</button>
-      <button onClick={setNewGreeting}>Set a New Greeting</button>
-      <div>Greeting: {greeting}</div> */}
-
     </div>
     /*<div className="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
       <header className="mb-auto">
