@@ -5,6 +5,7 @@ coverage.json
 typechain
 __config.json
 build
+notes
 
 #Hardhat files
 cache

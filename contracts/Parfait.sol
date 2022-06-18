@@ -74,41 +74,41 @@ contract Parfait is Initializable {
         CWBTCAllocation = _CWBTCAllocation;
         CDAIAllocation = _CDAIAllocation;
 
-        //deposit ETH for CETH
-        CETH.mint{ value: uint(msg.value * uint(_CETHAllocation) / 100) , gas: 250000 }();
+        // //deposit ETH for CETH
+        // CETH.mint{ value: uint(msg.value * uint(_CETHAllocation) / 100) , gas: 250000 }();
 
-        //convert remaining ETH to WETH
-        WETH.deposit{ value: (msg.value * uint(_CWBTCAllocation + _CDAIAllocation) / 100) , gas: 250000 }();
-        //declare uniswap params
-        ISwapRouter.ExactInputSingleParams memory params =
-            ISwapRouter.ExactInputSingleParams({
-                tokenIn: address(0),
-                tokenOut: address(0),
-                fee: 3000,
-                recipient: msg.sender,
-                deadline: block.timestamp,
-                amountIn: 0,
-                amountOutMinimum: 0, // this leaves txs vulnerable bad rates & MEV
-                sqrtPriceLimitX96: 0
-            });
+        // //convert remaining ETH to WETH
+        // WETH.deposit{ value: (msg.value * uint(_CWBTCAllocation + _CDAIAllocation) / 100) , gas: 250000 }();
+        // //declare uniswap params
+        // ISwapRouter.ExactInputSingleParams memory params =
+        //     ISwapRouter.ExactInputSingleParams({
+        //         tokenIn: address(0),
+        //         tokenOut: address(0),
+        //         fee: 3000,
+        //         recipient: msg.sender,
+        //         deadline: block.timestamp,
+        //         amountIn: 0,
+        //         amountOutMinimum: 0, // this leaves txs vulnerable bad rates & MEV
+        //         sqrtPriceLimitX96: 0
+        //     });
 
-        //swap WETH for WBTC
-        TransferHelper.safeApprove(address(WETH), address(swapRouter), (msg.value * uint(_CWBTCAllocation) / 100)); //scale lowered by 1e10 since WBTC is 1e8 base 
-        params.tokenIn = address(WETH);
-        params.tokenOut = address(WBTC);
-        params.amountIn = (msg.value * uint(_CWBTCAllocation) / 100);
-        swapRouter.exactInputSingle(params);
-        //deposit WBTC for CWBTC
-        CWBTC.mint(WBTC.balanceOf(address(this)));
+        // //swap WETH for WBTC
+        // TransferHelper.safeApprove(address(WETH), address(swapRouter), (msg.value * uint(_CWBTCAllocation) / 100)); //scale lowered by 1e10 since WBTC is 1e8 base 
+        // params.tokenIn = address(WETH);
+        // params.tokenOut = address(WBTC);
+        // params.amountIn = (msg.value * uint(_CWBTCAllocation) / 100);
+        // swapRouter.exactInputSingle(params);
+        // //deposit WBTC for CWBTC
+        // CWBTC.mint(WBTC.balanceOf(address(this)));
 
-        //swap WETH for DAI
-        TransferHelper.safeApprove(address(WETH), address(swapRouter), (msg.value * uint(_CWBTCAllocation) / 100));
-        params.tokenIn = address(WETH);
-        params.tokenOut = address(DAI);
-        params.amountIn = (msg.value * uint(_CWBTCAllocation) / 100);
-        swapRouter.exactInputSingle(params);
-        //Deposit DAI for CDAI
-        CDAI.mint(DAI.balanceOf(address(this)));
+        // //swap WETH for DAI
+        // TransferHelper.safeApprove(address(WETH), address(swapRouter), (msg.value * uint(_CWBTCAllocation) / 100));
+        // params.tokenIn = address(WETH);
+        // params.tokenOut = address(DAI);
+        // params.amountIn = (msg.value * uint(_CWBTCAllocation) / 100);
+        // swapRouter.exactInputSingle(params);
+        // //Deposit DAI for CDAI
+        // CDAI.mint(DAI.balanceOf(address(this)));
     }
 
     function rebalance() public {
@@ -210,7 +210,7 @@ contract Parfait is Initializable {
         CETHAllocation = _CETHAllocation;
         CWBTCAllocation = _CWBTCAllocation;
         CDAIAllocation = _CDAIAllocation;
-        rebalance();
+        // rebalance();
     }
 
     /* function withdraw() external {
