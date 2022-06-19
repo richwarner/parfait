@@ -221,7 +221,7 @@ contract Parfait {
         CETHAllocation = _CETHAllocation;
         CWBTCAllocation = _CWBTCAllocation;
         CDAIAllocation = _CDAIAllocation;
-        rebalance();
+        // rebalance();
     }
 
         // sell all to ETH and send out

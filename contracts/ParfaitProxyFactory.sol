@@ -8,7 +8,7 @@ contract ParfaitProxyFactory {
 
     address[] public allClones;
 
-    event NewClone(address _clone);
+    event NewClone(address _owner, address _clone);
 
     constructor(address _implementation) {
         implementationContract = _implementation;
@@ -22,7 +22,7 @@ contract ParfaitProxyFactory {
         instance = Clones.clone(implementationContract);
         (bool success, ) = instance.call{value: msg.value}(
             abi.encodeWithSignature(
-                "initialize(address,uint256,uint256,uint256)",
+                "initialize(address,int256,int256,int256)",
                 msg.sender,
                 _xAllocation,
                 _yAllocation,
@@ -30,9 +30,8 @@ contract ParfaitProxyFactory {
             )
         );
         require(success, "Proxy Initialization Failed");
-
         allClones.push(instance);
-        emit NewClone(instance);
+        emit NewClone(msg.sender, instance);
         return instance;
     }
 }
