@@ -2,7 +2,7 @@
 pragma solidity 0.8.4;
 pragma abicoder v2; //Uniswap guide: to allow arbitrary nested arrays and structs to be encoded and decoded in calldata, a feature used when executing a swap.
 
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+// import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -65,12 +65,18 @@ contract Parfait {
 
     ISwapRouter internal swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    function initialize(
+    /*  function initialize(
         address _owner,
         int _CETHAllocation,
         int _CWBTCAllocation,
         int _CDAIAllocation
-    ) public payable initializer {
+    ) public payable initializer { */
+    constructor(
+        address _owner,
+        int _CETHAllocation,
+        int _CWBTCAllocation,
+        int _CDAIAllocation
+    ) payable {
         require(_CETHAllocation + _CWBTCAllocation + _CDAIAllocation == 100, "invalid allocations sum");
         owner = _owner;
         CETHAllocation = _CETHAllocation;
@@ -123,92 +129,8 @@ contract Parfait {
         }
     }
 
-    function rebalance() public {
-        require(msg.sender == owner, "only owner can call this");
-        //returns values scaled by 1e26
-        (int ETHValue, int BTCValue, int DAIValue, int totalValue) = getValues();
-        //returns prices scaled by 1e8
-        (int ETHPrice, int BTCPrice, int DAIPrice) = getPrices();
-        
-        //adjustments are scaled 1e26 (same as values)
-        int CETHAdjustment = ((totalValue * CETHAllocation) / 100) - ETHValue;
-        int CWBTCAdjustment = ((totalValue * CWBTCAllocation) / 100) - BTCValue;
-        int CDAIAdjustment = ((totalValue * CDAIAllocation) / 100) - DAIValue;
-
-        //set uniswap parameters
-        ISwapRouter.ExactInputSingleParams memory params =
-            ISwapRouter.ExactInputSingleParams({
-                tokenIn: address(0),
-                tokenOut: address(0),
-                fee: 3000,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: 0,
-                amountOutMinimum: 0, // this leaves txs vulnerable bad rates & MEV
-                sqrtPriceLimitX96: 0
-            });
-
-        // --- SELLS TO WETH ---
-        if (CETHAdjustment < 0) {
-            //redeem CETHAdjustment amount of CETH for ETH
-            CETH.redeemUnderlying(uint(CETHAdjustment / ETHPrice));
-            //deposit ETH for WETH
-            WETH.deposit{ value: uint(CETHAdjustment / ETHPrice)}();
-        }
-        if (CWBTCAdjustment < 0) {
-            //redeem WBTCAdjustment of CWBTC for WBTC
-            CWBTC.redeemUnderlying(uint(CWBTCAdjustment / (BTCPrice * 1e10))); //scale lowered by 1e10 since WBTC is 1e8 base 
-            //then swap WBTC for WETH
-            TransferHelper.safeApprove(address(WBTC), address(swapRouter), WBTC.balanceOf(address(this)));  
-            params.tokenIn = address(WBTC);
-            params.tokenOut = address(WETH);
-            params.amountIn = WBTC.balanceOf(address(this));
-            swapRouter.exactInputSingle(params);        
-        }
-        if (CDAIAdjustment < 0) {
-            //redeem CDAIAdjustment amount of CDAI for DAI
-            CDAI.redeemUnderlying(uint(CDAIAdjustment / DAIPrice));
-            //then swap DAI for WETH
-            TransferHelper.safeApprove(address(DAI), address(swapRouter), DAI.balanceOf(address(this)));
-            params.tokenIn = address(DAI);
-            params.tokenOut = address(WETH);
-            params.amountIn = DAI.balanceOf(address(this));
-            swapRouter.exactInputSingle(params); 
-        }
-        //maybe take balance of WETH at this point and re-calculate buy amounts from balance of WETH to prevent small amounts of WETH from sitting in account
-
-        // --- BUYS FROM WETH ---
-        if (CETHAdjustment > 0) {
-            //withdraw WETH for ETH
-            WETH.withdraw(uint(CETHAdjustment / ETHPrice));
-            //deposit ETH for CETH
-            CETH.mint{ value: address(this).balance }();
-        }
-        if (CWBTCAdjustment > 0) {
-            //swap CWBTCAdjustment amount of WETH for WBTC
-            TransferHelper.safeApprove(address(WETH), address(swapRouter), uint(CWBTCAdjustment / (BTCPrice * 1e10))); //scale lowered by 1e10 since WBTC is 1e8 base 
-            params.tokenIn = address(WETH);
-            params.tokenOut = address(WBTC);
-            params.amountIn = uint(CWBTCAdjustment / (BTCPrice * 1e10)); //scale lowered by 1e10 since WBTC is 1e8 base 
-            swapRouter.exactInputSingle(params);
-            //deposit WBTC for CWBTC
-            WBTC.approve(address(CWBTC), WBTC.balanceOf(address(this)));
-            CWBTC.mint(WBTC.balanceOf(address(this)));
-        }
-        if (CDAIAdjustment > 0) {
-            //swap CDAIAdjustment amount of WETH for DAI
-            TransferHelper.safeApprove(address(WETH), address(swapRouter), uint(CDAIAdjustment / DAIPrice));
-            params.tokenIn = address(WETH);
-            params.tokenOut = address(DAI);
-            params.amountIn = uint(CDAIAdjustment / DAIPrice);
-            swapRouter.exactInputSingle(params);
-            //Deposit DAI for CDAI
-            DAI.approve(address(CDAI), DAI.balanceOf(address(this)));
-            CDAI.mint(DAI.balanceOf(address(this)));
-        }
-    }
-
-    function updateAllocations(
+    //this function receives ether, updates allocations and then rebalances 
+    function updateAllocationsAndRebalance(
         int _CETHAllocation,
         int _CWBTCAllocation,
         int _CDAIAllocation
@@ -221,75 +143,112 @@ contract Parfait {
         CETHAllocation = _CETHAllocation;
         CWBTCAllocation = _CWBTCAllocation;
         CDAIAllocation = _CDAIAllocation;
-        // rebalance();
+
+        sell();
+
+        //deposit any ETH (from new deposits or redeeming CETH for ETH above) into WETH
+        uint balance = address(this).balance;
+        if(balance > 0) {
+            WETH.deposit{ value: balance }();
+        }
+
+        buy();
     }
 
-        // sell all to ETH and send out
+    // sells all strategies to ETH or WETH
+    function sell() public {
+        uint CETHBalance = CETH.balanceOf(address(this));
+        uint CWBTCBalance = CWBTC.balanceOf(address(this));
+        uint CDAIBalance = CDAI.balanceOf(address(this));
+
+        if (CETHBalance > 0) {
+            //redeem  CETH for ETH
+            CETH.redeem(CETHBalance);
+        }
+        if (CWBTCBalance > 0) {
+            //redeem CWBTC for WBTC
+            CWBTC.redeem(CWBTCBalance);
+            //then swap WBTC for WETH
+            swap(address(WBTC), address(WETH), WBTC.balanceOf(address(this)));    
+        }
+        if (CDAIBalance > 0) {
+            //redeem CDAI for DAI
+            CDAI.redeem(CDAIBalance);
+            //then swap DAI for WETH
+            swap(address(DAI), address(WETH), DAI.balanceOf(address(this)));
+        }
+    }
+
+    //buys from WETH as per allocations
+    function buy() public {
+        uint WETHBalance = WETH.balanceOf(address(this));
+        uint CETHBuyAmount = WETHBalance * uint(CETHAllocation) / 100;
+        uint CWBTCBuyAmount = WETHBalance * uint(CWBTCAllocation) / 100;
+        uint CDAIBuyAmount = WETHBalance - CETHBuyAmount - CWBTCBuyAmount;
+
+        if(CETHAllocation > 0) {
+            //withdraw WETH for ETH
+            WETH.withdraw(CETHBuyAmount);
+            //deposit ETH for CETH
+            CETH.mint{ value: address(this).balance }();
+        }
+        if(CWBTCAllocation > 0) {
+            //swap WETH for WBTC
+            swap(address(WETH), address(WBTC), CWBTCBuyAmount);
+            //deposit WBTC for CWBTC
+            WBTC.approve(address(CWBTC), WBTC.balanceOf(address(this)));
+            CWBTC.mint(WBTC.balanceOf(address(this)));
+        }
+        if(CDAIAllocation > 0) {
+            //swap WETH for DAI
+            swap(address(WETH), address(DAI), CDAIBuyAmount);
+            //Deposit DAI for CDAI
+            DAI.approve(address(CDAI), DAI.balanceOf(address(this)));
+            CDAI.mint(DAI.balanceOf(address(this)));
+        }
+    }
+
+    // sell all to ETH and send out
     function withdraw() external {
         require(msg.sender == owner, "only owner can call this");
-
-        (int ETHBalance, int WBTCBalance, int DAIBalance) = getBalances();
-
-        //redeem balance of CETH for ETH
-        if(ETHBalance > 0) {
-            CETH.redeem(CETH.balanceOf(address(this)));
-        }
-
-        if(WBTCBalance + DAIBalance > 0) {
-            //set uniswap parameters
-            ISwapRouter.ExactInputSingleParams memory params =
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: address(0),
-                    tokenOut: address(0),
-                    fee: 3000,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: 0,
-                    amountOutMinimum: 0, // this leaves txs vulnerable bad rates & MEV
-                    sqrtPriceLimitX96: 0
-                });
-
-            if(WBTCBalance > 0) {
-                //redeem WBTCAdjustment of CWBTC for WBTC
-                CWBTC.redeem(uint(CWBTC.balanceOf(address(this))));
-                //then swap WBTC for WETH
-                TransferHelper.safeApprove(
-                    address(WBTC),
-                    address(swapRouter),
-                    WBTC.balanceOf(address(this))
-                );
-                params.tokenIn = address(WBTC);
-                params.tokenOut = address(WETH);
-                params.amountIn = WBTC.balanceOf(address(this));
-                swapRouter.exactInputSingle(params);
-            }
-
-            if(DAIBalance > 0) {
-                //redeem balance of CDAI for DAI
-                CDAI.redeem(uint(CDAI.balanceOf(address(this))));
-                //then swap DAI for WETH
-                TransferHelper.safeApprove(
-                    address(DAI),
-                    address(swapRouter),
-                    DAI.balanceOf(address(this))
-                );
-                params.tokenIn = address(DAI);
-                params.tokenOut = address(WETH);
-                params.amountIn = DAI.balanceOf(address(this));
-                swapRouter.exactInputSingle(params);
-            }
-
-            //withdraw balance of WETH for ETH
-            WETH.withdraw(uint(WETH.balanceOf(address(this))));
-        }
-        //withdraw balance of ETH
-        if(address(this).balance > 0) {
-            (bool success, ) = owner.call{value: address(this).balance}("");
-            require(success, "transfer to owner unsuccessful");
-        }
+        sell();
+        //withdraw balance of WETH for ETH
+        uint WETHBalance = WETH.balanceOf(address(this));
+        if(WETHBalance > 0) {
+            WETH.withdraw(WETH.balanceOf(address(this)));
+        }        
+        //transfer out balance of ETH
+        (bool success, ) = owner.call{value: address(this).balance}("");
+        require(success, "transfer to owner unsuccessful");
     }
 
-    receive() external payable {}
+    //performs internal ERC20 swaps through uniswap
+    function swap(address _tokenIn, address _tokenOut, uint _amount) internal {
+        //approval
+        TransferHelper.safeApprove(
+            _tokenIn,
+            address(swapRouter),
+            _amount
+        );
+
+        //swap
+        ISwapRouter.ExactInputSingleParams memory params =
+            ISwapRouter.ExactInputSingleParams({
+                tokenIn: _tokenIn,
+                tokenOut: _tokenOut,
+                fee: 3000,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: _amount,
+                amountOutMinimum: 0, // this leaves txs vulnerable bad rates & MEV
+                sqrtPriceLimitX96: 0
+            });
+        swapRouter.exactInputSingle(params);
+    }
+
+    receive() external payable {
+        WETH.deposit{ value: address(this).balance }();
+    }
 
     //returns balances of token in base units scaled up 1e18
     function getBalances() public view returns (int ETHBalance, int WBTCBalance, int DAIBalance) {
