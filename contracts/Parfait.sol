@@ -40,8 +40,7 @@ interface IWETH is IERC20 {
     function withdraw(uint) external;
 }
 
-//contract Parfait is Initializable 
-contract Parfait is Initializable {
+contract Parfait is Initializable{
     address public owner;
     int public CETHAllocation;
     int public CWBTCAllocation;
@@ -150,7 +149,7 @@ contract Parfait is Initializable {
     }
 
     // sells all strategies to ETH or WETH
-    function sell() public {
+    function sell() internal {
         uint CETHBalance = CETH.balanceOf(address(this));
         uint CWBTCBalance = CWBTC.balanceOf(address(this));
         uint CDAIBalance = CDAI.balanceOf(address(this));
@@ -174,11 +173,11 @@ contract Parfait is Initializable {
     }
 
     //buys from WETH as per allocations
-    function buy() public {
+    function buy() internal {
         uint WETHBalance = WETH.balanceOf(address(this));
         uint CETHBuyAmount = WETHBalance * uint(CETHAllocation) / 100;
         uint CWBTCBuyAmount = WETHBalance * uint(CWBTCAllocation) / 100;
-        uint CDAIBuyAmount = WETHBalance - CETHBuyAmount - CWBTCBuyAmount;
+        uint CDAIBuyAmount = WETHBalance * uint(CDAIAllocation) / 100;
 
         if(CETHAllocation > 0) {
             //withdraw WETH for ETH
@@ -241,7 +240,6 @@ contract Parfait is Initializable {
     }
 
     receive() external payable {
-        WETH.deposit{ value: address(this).balance }();
     }
 
     //returns balances of token in base units scaled up 1e18
