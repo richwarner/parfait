@@ -2,7 +2,7 @@
 pragma solidity 0.8.4;
 pragma abicoder v2; //Uniswap guide: to allow arbitrary nested arrays and structs to be encoded and decoded in calldata, a feature used when executing a swap.
 
-// import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
@@ -41,7 +41,7 @@ interface IWETH is IERC20 {
 }
 
 //contract Parfait is Initializable 
-contract Parfait {
+contract Parfait is Initializable {
     address public owner;
     int public CETHAllocation;
     int public CWBTCAllocation;
@@ -65,18 +65,12 @@ contract Parfait {
 
     ISwapRouter internal swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    /*  function initialize(
+    function initialize(
         address _owner,
         int _CETHAllocation,
         int _CWBTCAllocation,
         int _CDAIAllocation
-    ) public payable initializer { */
-    constructor(
-        address _owner,
-        int _CETHAllocation,
-        int _CWBTCAllocation,
-        int _CDAIAllocation
-    ) payable {
+    ) public payable initializer {
         require(_CETHAllocation + _CWBTCAllocation + _CDAIAllocation == 100, "invalid allocations sum");
         owner = _owner;
         CETHAllocation = _CETHAllocation;
