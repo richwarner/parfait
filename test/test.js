@@ -38,7 +38,7 @@ describe("ParfaitProxyFactory", function () {
       //create a parfait proxy contract from signer[1]
       console.log("\ncreating parfait proxy contract...");
       const ppfUser1 = ppf.connect(signers[1]);
-      const tx = await ppfUser1.createNewProxy(50, 30, 20, {
+      const tx = await ppfUser1.createNewProxy(85, 10, 5, {
         value: ethers.utils.parseEther("1"),
       });
       const receipt = await tx.wait();
@@ -59,16 +59,18 @@ describe("ParfaitProxyFactory", function () {
   });
 
   it("owner can call rebalance()", async function () {
-    const xBalance1 = await clone1User1.xBalance();
-    const tx1 = await clone1User1.rebalance();
+    const balances1 = await clone1User1.getBalances();
+    console.log(balances1);
+    const tx1 = await clone1User1.updateAllocationsAndRebalance(5, 35, 60);
     await tx1.wait();
-    const xBalance2 = await clone1User1.xBalance();
-    assert(xBalance1 < xBalance2);
+    const balances2 = await clone1User1.getBalances();
+    console.log(balances2);
+    assert(balance1[0] > balance2[0]);
   });
 
   it("other user can not call rebalance()", async function () {
     const clone1User2 = clone1User1.connect(signers[2]);
-    await expect(clone1User2.rebalance()).to.be.reverted;
+    await expect(clone1User2.updateAllocationsAndRebalance(33, 33, 34)).to.be.reverted;
   });
 
 });
