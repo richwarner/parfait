@@ -2,11 +2,12 @@
 pragma solidity 0.8.4;
 pragma abicoder v2; //Uniswap guide: to allow arbitrary nested arrays and structs to be encoded and decoded in calldata, a feature used when executing a swap.
 
-// import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "hardhat/console.sol";
 
 //compounds interace
 interface CErc20 {
@@ -40,43 +41,36 @@ interface IWETH is IERC20 {
     function withdraw(uint) external;
 }
 
-//contract Parfait is Initializable 
-contract Parfait {
+contract Parfait is Initializable{
     address public owner;
     int public CETHAllocation;
     int public CWBTCAllocation;
     int public CDAIAllocation;
 
     // all addresses on Rinkeby
-    IWETH WETH = IWETH(0xc778417E063141139Fce010982780140Aa0cD5Ab);
-    IERC20 WBTC = IERC20(0x577D296678535e4903D59A4C929B718e1D575e0A);
-    IERC20 DAI = IERC20(0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa);
+    IWETH constant WETH = IWETH(0xc778417E063141139Fce010982780140Aa0cD5Ab);
+    IERC20 constant WBTC = IERC20(0x577D296678535e4903D59A4C929B718e1D575e0A);
+    IERC20 constant DAI = IERC20(0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa);
 
-    CEther CETH = CEther(0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e);
-    CErc20 CWBTC = CErc20(0x0014F450B8Ae7708593F4A46F8fa6E5D50620F96);
-    CErc20 CDAI = CErc20(0x6D7F0754FFeb405d23C51CE938289d4835bE3b14);
+    CEther constant CETH = CEther(0xd6801a1DfFCd0a410336Ef88DeF4320D6DF1883e);
+    CErc20 constant CWBTC = CErc20(0x0014F450B8Ae7708593F4A46F8fa6E5D50620F96);
+    CErc20 constant CDAI = CErc20(0x6D7F0754FFeb405d23C51CE938289d4835bE3b14);
 
-    AggregatorV3Interface internal ETHPriceFeed =
+    AggregatorV3Interface internal constant ETHPriceFeed =
         AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
-    AggregatorV3Interface internal BTCPriceFeed =
+    AggregatorV3Interface internal constant BTCPriceFeed =
         AggregatorV3Interface(0xECe365B379E1dD183B20fc5f022230C044d51404);
-    AggregatorV3Interface internal DAIPriceFeed =
+    AggregatorV3Interface internal constant DAIPriceFeed =
         AggregatorV3Interface(0x2bA49Aaa16E6afD2a993473cfB70Fa8559B523cF);
 
-    ISwapRouter internal swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    ISwapRouter internal constant swapRouter = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    /*  function initialize(
+    function initialize(
         address _owner,
         int _CETHAllocation,
         int _CWBTCAllocation,
         int _CDAIAllocation
-    ) public payable initializer { */
-    constructor(
-        address _owner,
-        int _CETHAllocation,
-        int _CWBTCAllocation,
-        int _CDAIAllocation
-    ) payable {
+    ) public payable initializer {
         require(_CETHAllocation + _CWBTCAllocation + _CDAIAllocation == 100, "invalid allocations sum");
         owner = _owner;
         CETHAllocation = _CETHAllocation;
@@ -156,7 +150,7 @@ contract Parfait {
     }
 
     // sells all strategies to ETH or WETH
-    function sell() public {
+    function sell() internal {
         uint CETHBalance = CETH.balanceOf(address(this));
         uint CWBTCBalance = CWBTC.balanceOf(address(this));
         uint CDAIBalance = CDAI.balanceOf(address(this));
@@ -180,11 +174,11 @@ contract Parfait {
     }
 
     //buys from WETH as per allocations
-    function buy() public {
+    function buy() internal {
         uint WETHBalance = WETH.balanceOf(address(this));
         uint CETHBuyAmount = WETHBalance * uint(CETHAllocation) / 100;
         uint CWBTCBuyAmount = WETHBalance * uint(CWBTCAllocation) / 100;
-        uint CDAIBuyAmount = WETHBalance - CETHBuyAmount - CWBTCBuyAmount;
+        uint CDAIBuyAmount = WETHBalance * uint(CDAIAllocation) / 100;
 
         if(CETHAllocation > 0) {
             //withdraw WETH for ETH
@@ -220,6 +214,10 @@ contract Parfait {
         //transfer out balance of ETH
         (bool success, ) = owner.call{value: address(this).balance}("");
         require(success, "transfer to owner unsuccessful");
+
+        CETHAllocation = 0;
+        CWBTCAllocation = 0;
+        CDAIAllocation = 0;
     }
 
     //performs internal ERC20 swaps through uniswap
@@ -247,7 +245,6 @@ contract Parfait {
     }
 
     receive() external payable {
-        WETH.deposit{ value: address(this).balance }();
     }
 
     //returns balances of token in base units scaled up 1e18
@@ -256,6 +253,7 @@ contract Parfait {
         WBTCBalance = int(CWBTC.balanceOf(address(this)) * (CWBTC.exchangeRateStored()) / 1e18) * 1e10; //WBTC only has 8 digits, scale up to match other units
         DAIBalance = int(CDAI.balanceOf(address(this)) * (CDAI.exchangeRateStored()) / 1e18);
     }
+
     //returns prices (usd/token) scaled by 1e8
     function getPrices() public view returns (int ETHPrice, int BTCPrice, int DAIPrice) {
         (, ETHPrice, , , ) = ETHPriceFeed.latestRoundData();

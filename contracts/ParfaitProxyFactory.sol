@@ -2,6 +2,7 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "hardhat/console.sol";
 
 contract ParfaitProxyFactory {
     address public implementationContract;
@@ -15,11 +16,13 @@ contract ParfaitProxyFactory {
     }
 
     function createNewProxy(
-        uint _xAllocation,
-        uint _yAllocation,
-        uint _zAllocation
+        int _xAllocation,
+        int _yAllocation,
+        int _zAllocation
     ) external payable returns (address instance) {
         instance = Clones.clone(implementationContract);
+        console.log("value: ");
+        console.log(msg.value);
         (bool success, ) = instance.call{value: msg.value}(
             abi.encodeWithSignature(
                 "initialize(address,int256,int256,int256)",

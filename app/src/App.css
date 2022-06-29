@@ -55,6 +55,10 @@
   color: #3a7c8a;
 }
 
+.secondary {
+  color: #3a1e56;
+}
+
 .bg-turq {
   background-color: #3a7c8a;
 }
@@ -76,7 +80,12 @@
 }
 
 .text-muted {
-  --x-text-opacity: 1;
+  --x-text-opacity: .5;  
+}
+
+.muted {
+  --x-text-opacity: .5;
+  color: rgba(0,0,0,0.5);
 }
 
 .text-nowrap {
@@ -110,6 +119,19 @@
 .btn-secondary:hover {
   background-color: #250f3b;
   border-color: #250f3b;
+}
+
+.badge-pill {
+  font-size:1.2rem;
+}
+
+.coin-icon {
+  width: 25px;
+  height: 25px;
+}
+
+.gray {
+  color: #cccccc;
 }
 
 /* .bd-placeholder-img {
