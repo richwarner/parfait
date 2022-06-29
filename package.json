@@ -7,7 +7,7 @@
     "test": "npx hardhat test",
     "deploy": "npx hardhat compile && npx hardhat run scripts/deploy.js --network rinkeby",
     "start": "cd app && npm run start",
-    "build": "npm run deploy && cd app && npm run build"
+    "build": "cd app && npm run build"
   },
   "keywords": [],
   "author": "",
