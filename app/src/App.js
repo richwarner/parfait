@@ -131,7 +131,7 @@ function App() {
         console.log("Balance Z: %s", balanceZ);
 
         totalBalanceNumeric = (balanceX * priceX) + (balanceY * priceY) + (balanceZ * priceZ);
-        setTotalBalance(totalBalance.toLocaleString('en-US', {style: 'currency', currency: 'USD',}));
+        setTotalBalance(totalBalanceNumeric.toLocaleString('en-US', {style: 'currency', currency: 'USD',}));
         const currentAllocationX = (balanceX * priceX) / totalBalanceNumeric * 100 || 0;
         const currentAllocationY = (balanceY * priceY) / totalBalanceNumeric * 100 || 0;
         const currentAllocationZ = (balanceZ * priceZ) / totalBalanceNumeric * 100 || 0;
