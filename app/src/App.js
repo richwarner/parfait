@@ -202,6 +202,7 @@ function App() {
     // Show loading spinner
     document.querySelector("#btn-submit-portfolio").classList.add("d-none");
     document.querySelector("#btn-submit-portfolio-loading").classList.remove("d-none");
+    document.querySelector("#btn-withdraw").classList.add("d-none");
 
     try {
       
@@ -257,6 +258,7 @@ function App() {
     document.querySelector("#btn-submit-portfolio-loading").classList.add("d-none");
   }
 
+  // Validation messaging
   function formIsValid(isUpdate) {
     let isValid = true;
     let allocationTotal;
@@ -311,8 +313,13 @@ function App() {
       const proxyContract = new ethers.Contract(proxyAddress, parfaitJSON.abi, signer);
       const tx = await proxyContract.withdraw();
       const receipt = await tx.wait(); 
+
       // Update UI
       populatePortfolio(proxyAddress);
+
+      // Success message
+      setSuccessMessage("Your positions have been withdrawn.");
+      document.querySelector("#successMessage").classList.remove("d-none");
         
     } catch (err) {
       console.log(err);
@@ -321,11 +328,6 @@ function App() {
     // Remove loading spinner
     document.querySelector("#btn-submit-portfolio").classList.remove("d-none");
     document.querySelector("#btn-withdraw-loading").classList.add("d-none");
-
-    // Success message
-    setSuccessMessage("Your positions have been withdrawn.");
-    document.querySelector("#successMessage").classList.remove("d-none");
-
   }
 
   return (
