@@ -1,4 +1,3 @@
-//const hre = require("hardhat");
 import {ethers} from 'ethers';
 import './App.css';
 import parfaitJSON from './utils/Parfait.json';
@@ -279,8 +278,6 @@ function App() {
       isValid = false;
     }
     if(allocationTotal !== 100 || xAllocation < 0 || yAllocation < 0 || zAllocation < 0) {
-      console.log(xAllocation);
-      console.log(allocationTotal);
       setFailMessage("Allocations must be positive whole numbers that add to 100.");
       isValid = false;
     }
