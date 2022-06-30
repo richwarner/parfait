@@ -72,7 +72,7 @@
 }
 
 .bg-soft-success {
-  background-color: #ccecf5!important;
+  background-color: #d1e7dd!important;
 }
 
 .text-muted, .text-muted-focus:focus, .text-muted-hover:hover {
@@ -133,6 +133,7 @@
 .gray {
   color: #cccccc;
 }
+
 
 /* .bd-placeholder-img {
   font-size: 1.125rem;

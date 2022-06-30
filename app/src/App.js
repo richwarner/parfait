@@ -160,8 +160,7 @@ function App() {
       }
 
       // Set input state
-      if(userProxyAddress) {
-        
+      if(userProxyAddress) {        
         const matches = document.querySelectorAll(".position-details");
         matches.forEach(match => match.classList.remove("d-none"));
         setXAllocation("");
@@ -251,6 +250,8 @@ function App() {
 
     } catch (err) {
       console.log(err);
+      // Update UI
+      populatePortfolio(proxyAddress);
     }
 
     // Remove loading spinner
@@ -323,6 +324,8 @@ function App() {
         
     } catch (err) {
       console.log(err);
+      // Update UI
+      populatePortfolio(proxyAddress);
     }
 
     // Remove loading spinner
