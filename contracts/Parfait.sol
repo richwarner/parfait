@@ -21,7 +21,7 @@ interface CErc20 {
 
     function redeemUnderlying(uint) external returns (uint);
 
-    function balanceOf(address) external view returns (uint); //Lee added
+    function balanceOf(address) external view returns (uint);
 }
 
 interface CEther {
@@ -33,7 +33,7 @@ interface CEther {
 
     function redeemUnderlying(uint) external returns (uint);
 
-    function balanceOf(address) external view returns (uint); //Lee added
+    function balanceOf(address) external view returns (uint);
 }
 
 interface IWETH is IERC20 {
@@ -70,7 +70,7 @@ contract Parfait is Initializable{
         int _CETHAllocation,
         int _CWBTCAllocation,
         int _CDAIAllocation
-    ) public payable initializer {
+    ) external payable initializer {
         require(_CETHAllocation + _CWBTCAllocation + _CDAIAllocation == 100, "invalid allocations sum");
         owner = _owner;
         CETHAllocation = _CETHAllocation;
@@ -128,7 +128,7 @@ contract Parfait is Initializable{
         int _CETHAllocation,
         int _CWBTCAllocation,
         int _CDAIAllocation
-    ) public payable {
+    ) external payable {
         require(msg.sender == owner, "only owner can call this");
         require(
             _CETHAllocation + _CWBTCAllocation + _CDAIAllocation == 100,
@@ -147,6 +147,24 @@ contract Parfait is Initializable{
         }
 
         buy();
+    }
+
+    // sell all to ETH and send out
+    function withdraw() external {
+        require(msg.sender == owner, "only owner can call this");
+        sell();
+        //withdraw balance of WETH for ETH
+        uint WETHBalance = WETH.balanceOf(address(this));
+        if(WETHBalance > 0) {
+            WETH.withdraw(WETH.balanceOf(address(this)));
+        }        
+        //transfer out balance of ETH
+        (bool success, ) = owner.call{value: address(this).balance}("");
+        require(success, "transfer to owner unsuccessful");
+
+        CETHAllocation = 0;
+        CWBTCAllocation = 0;
+        CDAIAllocation = 0;
     }
 
     // sells all strategies to ETH or WETH
@@ -202,24 +220,6 @@ contract Parfait is Initializable{
         }
     }
 
-    // sell all to ETH and send out
-    function withdraw() external {
-        require(msg.sender == owner, "only owner can call this");
-        sell();
-        //withdraw balance of WETH for ETH
-        uint WETHBalance = WETH.balanceOf(address(this));
-        if(WETHBalance > 0) {
-            WETH.withdraw(WETH.balanceOf(address(this)));
-        }        
-        //transfer out balance of ETH
-        (bool success, ) = owner.call{value: address(this).balance}("");
-        require(success, "transfer to owner unsuccessful");
-
-        CETHAllocation = 0;
-        CWBTCAllocation = 0;
-        CDAIAllocation = 0;
-    }
-
     //performs internal ERC20 swaps through uniswap
     function swap(address _tokenIn, address _tokenOut, uint _amount) internal {
         //approval
@@ -249,7 +249,7 @@ contract Parfait is Initializable{
 
     //returns balances of token in base units scaled up 1e18
     function getBalances() public view returns (int ETHBalance, int WBTCBalance, int DAIBalance) {
-        ETHBalance = int(CETH.balanceOf(address(this)) * (CETH.exchangeRateStored()) / 1e18); //check for overflow
+        ETHBalance = int(CETH.balanceOf(address(this)) * (CETH.exchangeRateStored()) / 1e18);
         WBTCBalance = int(CWBTC.balanceOf(address(this)) * (CWBTC.exchangeRateStored()) / 1e18) * 1e10; //WBTC only has 8 digits, scale up to match other units
         DAIBalance = int(CDAI.balanceOf(address(this)) * (CDAI.exchangeRateStored()) / 1e18);
     }
@@ -266,7 +266,7 @@ contract Parfait is Initializable{
         (int ETHPrice, int BTCPrice, int DAIPrice) = getPrices();
         
         ETHValue = ETHBalance * ETHPrice; 
-        BTCValue = WBTCBalance * BTCPrice; //check that this calcs WBTC Value correctly?
+        BTCValue = WBTCBalance * BTCPrice;
         DAIValue = DAIBalance * DAIPrice;
         totalValue = ETHValue + BTCValue + DAIValue;
     }

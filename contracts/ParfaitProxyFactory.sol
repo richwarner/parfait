@@ -21,8 +21,6 @@ contract ParfaitProxyFactory {
         int _zAllocation
     ) external payable returns (address instance) {
         instance = Clones.clone(implementationContract);
-        console.log("value: ");
-        console.log(msg.value);
         (bool success, ) = instance.call{value: msg.value}(
             abi.encodeWithSignature(
                 "initialize(address,int256,int256,int256)",
